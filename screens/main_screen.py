@@ -52,6 +52,7 @@ class MainScreen(QWidget):
         self.models_tab.initialize_models_from_folder()
         self.history_tab = HistoryTab()
         self.history_tab.load_history_items(self.settings.get_save_location())
+        self.history_tab.item_clicked.connect(self.load_history_item)
 
         self.tabs_content = QStackedWidget()
         self.tabs_content.setContentsMargins(0, 0, 0, 0)
@@ -94,6 +95,10 @@ class MainScreen(QWidget):
                 tab_item.set_selected()
             else:
                 tab_item.set_unselected()
+
+    def load_history_item(self, prompt, settings):
+        self.change_tab(0)
+        self.generate_tab.load_history_item(prompt, settings)
 
     def show_snackbar(self, group, addition):
         if group == "library_add":

@@ -30,22 +30,17 @@ class ModelsTab(QWidget):
         self.currently_downloading = False
         self.models = []
 
+        self.layout = QVBoxLayout()
+
         self.models_layout = QVBoxLayout()
+        self.models_layout.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.scroll_area = QScrollArea(self)
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area_frame = QFrame()
         self.scroll_area_frame.setLayout(self.models_layout)
         self.scroll_area.setWidget(self.scroll_area_frame)
 
-        self.layout = QVBoxLayout()
         self.layout.addWidget(self.scroll_area)
-
-        # self.no_models_label = QLabel("Nie ma żadnych modeli. Przejdź do zakładki 'Explore', aby pobrać jakiś model.")
-        # self.no_models_label.setAlignment(Qt.AlignCenter)
-        # self.no_models_label.setStyleSheet("color: #ccc; font-size: 14px;")
-        # self.no_models_label.setVisible(False)
-        #
-        # self.layout.addWidget(self.no_models_label)
 
         self.setLayout(self.layout)
 

@@ -1,8 +1,9 @@
+from functools import partial
+
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QPushButton,
-    QDialog,
-    QVBoxLayout,
-    QListWidget,
+    QMenu,
     QApplication,
 )
 from PySide6.QtCore import Signal
@@ -36,27 +37,15 @@ class ModelSelector(QPushButton):
             """
         )
 
-        self.clicked.connect(self.open_model_selector_dialog)
+        self.clicked.connect(self.show_model_selector_menu)
 
-    def open_model_selector_dialog(self):
-        dialog = QDialog(self)
-        dialog.setWindowTitle("Select a Model")
-        layout = QVBoxLayout(dialog)
-
-        list_widget = QListWidget()
+    def show_model_selector_menu(self):
+        menu = QMenu(self)
         for model in self.models:
-            list_widget.addItem(model)
-        layout.addWidget(list_widget)
-
-        list_widget.itemDoubleClicked.connect(
-            lambda: self.model_selected(dialog, list_widget)
-        )
-
-        dialog.exec_()
-
-    def model_selected(self, dialog, list_widget):
-        self.select_model(list_widget.currentItem().text())
-        dialog.accept()
+            action = QAction(model, self)
+            action.triggered.connect(partial(self.select_model, model))
+            menu.addAction(action)
+        menu.exec_(self.mapToGlobal(self.rect().bottomLeft()))
 
     def select_model(self, model):
         self.selected_model = model

@@ -156,6 +156,13 @@ class ConfigurationBar(QWidget):
         self.guidance_scale = float(self.guidance_scale_input.text())
         self.style = self.style_buttons.get_selected()
 
+    def load_settings_from_list(self, settings):
+        self.width_input.setText(str(settings[0][1]))
+        self.height_input.setText(str(settings[1][1]))
+        self.steps_input.setText(str(settings[2][1]))
+        self.guidance_scale_input.setText(str(settings[3][1]))
+        self.style_buttons.select_button(settings[4][1])
+
     def update_models(self, models):
         temp_models = [model.modelId for model in models]
         self.model_selector.models = temp_models

@@ -55,3 +55,9 @@ class ChoiceButtons(QWidget):
 
     def get_selected(self):
         return self.selected_button.text()
+
+    def select_button(self, button_text):
+        for button in self.buttons:
+            if button.text() == button_text:
+                button.click()
+                break

@@ -2,13 +2,15 @@ import os
 import json
 import os
 from PySide6.QtWidgets import QListWidget, QListWidgetItem, QVBoxLayout, QWidget
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 
-from widgets.history_item_widget import HistoryItemWidget
+from widgets.history_item import HistoryItem
 from constants import surface_color
 
 
 class HistoryTab(QWidget):
+    item_clicked = Signal(str, list)
+
     def __init__(self):
         super().__init__()
         self.setContentsMargins(5, 5, 5, 5)
@@ -49,9 +51,10 @@ class HistoryTab(QWidget):
                             ["Guidance Scale", settings.get("guidance_scale")],
                             ["Style", settings.get("style")],
                         ]
-                        history_item_widget = HistoryItemWidget(
+                        history_item_widget = HistoryItem(
                             prompt, settings_filtered, image_path
                         )
+                        history_item_widget.clicked.connect(self.item_clicked.emit)
                         list_item = QListWidgetItem(self.history_list)
                         list_item.setSizeHint(history_item_widget.sizeHint())
                         self.history_list.addItem(list_item)

@@ -25,6 +25,9 @@ class Predictor(QObject):
         self.pipe = pipe
         self.pipeline_loaded.emit()
 
+    def is_pipeline_loaded(self):
+        return self.pipe is not None
+
     def generate_image(
         self,
         prompt,

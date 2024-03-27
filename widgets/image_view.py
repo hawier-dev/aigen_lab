@@ -25,7 +25,14 @@ class ImageView(QGraphicsView):
         if self.image_item is not None:
             self.scene.removeItem(self.image_item)
         self.image_item = self.scene.addPixmap(pixmap)
-        self.fitInView(self.image_item, Qt.KeepAspectRatio)
+
+        image_width = pixmap.width()
+        image_height = pixmap.height()
+
+        self.scene.setSceneRect(0, 0, image_width, image_height)
+
+        self.fitInView(self.scene.sceneRect(), Qt.KeepAspectRatio)
+
         self.setDragMode(QGraphicsView.ScrollHandDrag)
         self.image_created = True
         self.show()
@@ -55,7 +62,7 @@ class ImageView(QGraphicsView):
         if self.image_created:
             factor = 1.2
             if event.angleDelta().y() > 0:
-                scaleFactor = factor
+                scale_factor = factor
             else:
-                scaleFactor = 1.0 / factor
-            self.scale(scaleFactor, scaleFactor)
+                scale_factor = 1.0 / factor
+            self.scale(scale_factor, scale_factor)

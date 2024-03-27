@@ -21,7 +21,6 @@ from utils.predictor import Predictor
 from utils.worker import ImageGenerationTask
 from widgets.configuration_bar import ConfigurationBar
 from widgets.image_view import ImageView
-from widgets.scrolling_prompts import ScrollingPrompts
 
 
 class GenerateTab(QWidget):
@@ -74,6 +73,7 @@ class GenerateTab(QWidget):
         self.prompt_text_edit = QLineEdit()
         self.prompt_text_edit.setPlaceholderText("Enter prompt here...")
         self.prompt_text_edit.returnPressed.connect(self.generate_image)
+        self.prompt_text_edit.textChanged.connect(self.check_for_run)
 
         # Generate button setup
         self.generate_button = QPushButton("Generate")
@@ -101,15 +101,37 @@ class GenerateTab(QWidget):
 
         self.generate_button.clicked.connect(self.generate_image)
 
-        self.predictor.pipeline_loaded.connect(self.configuration_bar.stop_animation)
+        self.predictor.pipeline_loaded.connect(self.pipeline_loaded)
 
         self.setLayout(self.layout)
 
+        self.check_for_run()
+
+    def check_for_run(self):
+        if self.prompt_text_edit.text() and self.predictor.is_pipeline_loaded():
+            self.generate_button.setEnabled(True)
+        else:
+            self.generate_button.setEnabled(False)
+
+    def load_history_item(self, image_path, settings):
+        self.generate_button.setEnabled(False)
+        self.display_image(image_path)
+        self.configuration_bar.load_settings_from_list(settings)
+
     def load_pipeline(self, model_id):
         self.configuration_bar.start_animation()
+        self.generate_button.setEnabled(False)
         self.predictor.load_pipeline(model_id)
 
+    def pipeline_loaded(self):
+        self.configuration_bar.stop_animation()
+        self.check_for_run()
+
     def generate_image(self):
+        if not self.generate_button.isEnabled():
+            return
+
+        self.generate_button.setEnabled(False)
         self.start_animation()
         prompt = self.prompt_text_edit.text()
         task = ImageGenerationTask(
@@ -140,6 +162,7 @@ class GenerateTab(QWidget):
             self.image_viewer.set_placeholder_background()
 
         self.stop_animation()
+        self.generate_button.setEnabled(True)
         self.progress_bar.setValue(0)
 
     def start_animation(self):
@@ -161,4 +184,5 @@ class GenerateTab(QWidget):
     def report_error(self, e):
         print(f"Error: {e}")
         self.stop_animation()
+        self.generate_button.setEnabled(True)
         self.progress_bar.setValue(0)

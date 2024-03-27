@@ -35,7 +35,11 @@ PROMPT_LAYOUT_STYLE = f"""
     QPushButton:hover {{
         background-color: {primary_variant_color};
     }}
-
+    
+    QPushButton:disabled {{
+        background-color: {surface2_color};
+        color: #888;
+    }}
 """
 
 MODELS_TAB_STYLES = f"""

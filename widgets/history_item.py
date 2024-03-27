@@ -1,6 +1,6 @@
 import os
-from PySide6.QtCore import Qt, QSize
-from PySide6.QtGui import QPixmap, QIcon
+from PySide6.QtCore import Qt, QSize, Signal
+from PySide6.QtGui import QPixmap, QIcon, QCursor
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -10,10 +10,12 @@ from PySide6.QtWidgets import (
     QFrame,
 )
 
-from constants import surface2_color, surface3_color
+from constants import surface2_color, surface3_color, surface4_color, surface_color
 
 
-class HistoryItemWidget(QFrame):
+class HistoryItem(QFrame):
+    clicked = Signal(str, list)
+
     def __init__(self, prompt_name, settings, image_path, parent=None):
         super().__init__(parent)
         self.prompt_name = prompt_name
@@ -21,16 +23,20 @@ class HistoryItemWidget(QFrame):
         self.image_path = image_path
 
         self.setAttribute(Qt.WA_StyledBackground, True)
-        self.setStyleSheet(
-            f"""
+        self.styles = f"""
             QFrame {{
                 border-bottom: 1px solid {surface2_color};
+                background-color: {surface_color};
             }}
             QLabel {{
                 border: none;
             }}
+            QFrame:hover {{
+                background-color: {surface4_color};
+            }}
         """
-        )
+        self.setStyleSheet(self.styles)
+        self.setCursor(QCursor(Qt.PointingHandCursor))
         self.layout = QVBoxLayout(self)
         self.layout.setSpacing(10)
 
@@ -64,3 +70,26 @@ class HistoryItemWidget(QFrame):
         self.layout.addWidget(self.image_label)
 
         self.setLayout(self.layout)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.clicked.emit(self.image_path, self.settings)
+            event.accept()
+        else:
+            event.ignore()
+
+    def enterEvent(self, event):
+        self.setStyleSheet(
+            f"""
+            QFrame {{
+                border-bottom: 1px solid {surface2_color};
+                background-color: {surface2_color};
+            }}
+            QLabel {{
+                border: none;
+            }}
+        """
+        )
+
+    def leaveEvent(self, event):
+        self.setStyleSheet(self.styles)
