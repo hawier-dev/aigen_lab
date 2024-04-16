@@ -1,3 +1,4 @@
+from datetime import datetime
 from diffusers import StableDiffusionPipeline
 import torch
 import os
@@ -10,14 +11,13 @@ from utils.worker import PipelineLoaderThread
 class Predictor(QObject):
     pipeline_loaded = Signal()
 
-    def __init__(self, model_path, save_path):
+    def __init__(self, save_path):
         super().__init__()
-        self.model_path = model_path
         self.save_path = save_path
         self.pipe = None
 
-    def load_pipeline(self, model_id):
-        self.loader_thread = PipelineLoaderThread(self.model_path)
+    def load_pipeline(self, model_path, model_id, device):
+        self.loader_thread = PipelineLoaderThread(model_path, model_id, device)
         self.loader_thread.finished.connect(self.on_pipeline_loaded)
         self.loader_thread.start()
 
@@ -44,6 +44,11 @@ class Predictor(QObject):
         )
         prompt_save_path = os.path.join(self.save_path, folder_name)
 
+        index = 1
+        while os.path.exists(prompt_save_path):
+            prompt_save_path = os.path.join(self.save_path, f"{folder_name}_{index}")
+            index += 1
+
         os.makedirs(prompt_save_path, exist_ok=True)
 
         file_name = f"{folder_name}.png"
@@ -56,6 +61,7 @@ class Predictor(QObject):
             "steps": steps,
             "guidance_scale": guidance_scale,
             "style": style,
+            "date": datetime.now().strftime("%x %X"),
         }
 
         if style == "Artistic":
@@ -71,11 +77,10 @@ class Predictor(QObject):
 
         results = self.pipe(
             prompt,
-            width=width,
-            height=height,
-            num_inference_steps=steps,
-            guidance_scale=guidance_scale,
-            num_images_per_prompt=1,
+            width=int(width),
+            height=int(height),
+            num_inference_steps=int(steps),
+            guidance_scale=float(guidance_scale),
             callback_on_step_end=progress_callback,
         )
         image = results.images[0]

@@ -14,7 +14,32 @@ on_background_color = "#FFFFFF"
 on_surface_color = "#FFFFFF"
 on_error_color = "#FFFFFF"
 
-AVAIABLE_MODELS = [{"name": "runwayml/stable-diffusion-v1-5", "branch": "fp16"}]
+correct_color = "#4bf542"
+waiting_color = "#427ef5"
+wrong_color = "#f54254"
+
+AVAIABLE_MODELS = [
+    {
+        "name": "runwayml/stable-diffusion-v1-5",
+        "branch": "main",
+        "model_type": "generate",
+    },
+    {
+        "name": "stabilityai/stable-diffusion-2-1",
+        "branch": "main",
+        "model_type": "generate",
+    },
+    {
+        "name": "playgroundai/playground-v2.5-1024px-aesthetic",
+        "branch": "main",
+        "model_type": "generate",
+    },
+    {
+        "name": "runwayml/stable-diffusion-inpainting",
+        "branch": "main",
+        "model_type": "inpaint",
+    },
+]
 
 LINK_STYLE = f"color: {primary_color}; font-weight: bold;"
 
@@ -42,13 +67,57 @@ PROMPT_LAYOUT_STYLE = f"""
     }}
 """
 
-MODELS_TAB_STYLES = f"""
-    QListWidget {{
-        font-size: 14px;
-        background-color: #333;
-        color: white;
-        border-radius: 5px;
-        margin: 5px;
+LINE_EDIT_STYLES = f"""
+    QFrame{{
+        background-color: {surface_color};
+        color: {on_surface_color};
+        border: 1px solid {surface2_color};
+        border-radius: 0px;
+    }}
+    QLineEdit{{
+        border: none;
+        padding: 5px;
+        font-size: 13px;
+        background-color: {surface_color};
+    }}
+    QLabel{{
+        border: none;
+    }}
+"""
+
+LINE_EDIT_HOVER_STYLES = f"""
+    QFrame{{
+        background-color: {surface2_color};
+        color: {on_surface_color}; 
+        border: 1px solid {surface2_color};
+        border-radius: 0px;
+    }}
+    QLineEdit{{
+        border: none;
+        padding: 5px;
+        font-size: 13px;
+        background-color: {surface2_color}; 
+    }}
+    QLabel{{
+        border: none;
+    }}
+"""
+
+LINE_EDIT_ACTIVE_STYLES = f"""
+    QFrame{{
+        background-color: {surface_color};
+        color: {on_surface_color}; 
+        border: 1px solid {primary_color};
+        border-radius: 0px;
+    }}
+    QLineEdit{{
+        border: none;
+        padding: 5px;
+        font-size: 13px;
+        background-color: {surface_color}; 
+    }}
+    QLabel{{
+        border: none;
     }}
 """
 
@@ -63,6 +132,22 @@ LOCAL_MODEL_STYLES = f"""
         color: {on_surface_color};
         border: none;
     }}
+    
+    QPushButton {{
+        background-color: {surface_color};
+        color: #fff;
+        font-size: 12px;
+        font-weight: bold;
+        border: 1px solid {surface2_color};
+        padding: 5px 10px;
+    }}
+    QPushButton:hover {{
+        background-color: {surface2_color};
+    }}
+    QPushButton:pressed {{
+        background-color: {surface3_color};
+    }}
+
     
     QProgressBar {{
         border-radius: 2px;
@@ -79,6 +164,9 @@ LOCAL_MODEL_STYLES = f"""
 """
 
 SETTINGS_STYLES = f"""
+    QWidget {{
+        background-color: {surface_color};
+    }}
     QPushButton {{
         background-color: {surface2_color};
         color: {on_surface_color};
@@ -178,20 +266,20 @@ STYLESHEETS = f"""
     QListView {{
         background: {surface_color};
         border: none;
-        padding: 10px;
         font-weight: 600;
     }}
     
     QListView::item {{
-        background: {surface2_color};
+        background: {surface_color};
         color: {on_surface_color};
         padding: 0px 10px 0px 10px;
+        border: 1px solid {surface2_color};
         border-radius: 0px;
         height: 20px;
     }}
     
     QListView::item:hover {{
-        background: {surface3_color};
+        background: {surface2_color};
         color: {on_primary_color};
     }}
     
@@ -269,10 +357,26 @@ STYLESHEETS = f"""
         background-color: {primary_color}; 
         width: 20px;
     }}
-
+    
+    QStatusBar {{
+        background-color: {surface_color};
+        color: {on_surface_color};
+        border: none;
+    }}
+    QStatusBar QLabel {{
+        color: {on_surface_color};
+        font-size: 11px;
+        border: none;
+        font-family: "Inter", sans-serif;
+    }}
+    QStatusBar::item {{
+        border: none;
+    }}
+    
     QScrollArea {{
         border: none;
     }}
+    
     QScrollBar:vertical {{
         background: {surface_color};
         width: 10px;
@@ -341,6 +445,13 @@ STYLESHEETS = f"""
         background: none;
         width: 0px;
         height: 0px;
+    }}
+    QToolTip {{
+        background-color: {surface_color};
+        color: {on_surface_color};
+        border: 1px solid {surface2_color};
+        font-size: 13px;
+        padding: 5px;
     }}
 """
 

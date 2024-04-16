@@ -1,4 +1,5 @@
 import os
+from functools import partial
 
 from PySide6.QtWidgets import (
     QWidget,
@@ -11,24 +12,29 @@ from PySide6.QtWidgets import (
     QProgressBar,
 )
 from PySide6.QtGui import QPixmap, QIcon, QMovie
-from PySide6.QtCore import Qt, QSize, QThreadPool, QPropertyAnimation
+from PySide6.QtCore import Qt, QSize, QThreadPool, QPropertyAnimation, Signal
 
 from constants import (
     PROMPT_LAYOUT_STYLE,
     surface3_color,
 )
+from utils.animations import OpacityAnimation
 from utils.predictor import Predictor
 from utils.worker import ImageGenerationTask
-from widgets.configuration_bar import ConfigurationBar
+from widgets.edit_tools_widget import EditToolsWidget
+from widgets.right_panel import RightPanel
 from widgets.image_view import ImageView
 
 
 class GenerateTab(QWidget):
+    generated_image = Signal()
+
     def __init__(self, settings):
         super().__init__()
         self.settings = settings
+        self.models = []
+        self.device = self.settings.get_device()
         self.predictor = Predictor(
-            r"C:\Users\mbady\Documents\aigenlab\models\stable-diffusion-v1-5",
             self.settings.get_save_location(),
         )
 
@@ -53,8 +59,10 @@ class GenerateTab(QWidget):
         self.progress_bar.setMaximumHeight(2)
         self.progress_bar.setMaximum(100)
         self.progress_bar.setTextVisible(False)
+        self.progress_spacer_item = QWidget()
+        self.progress_spacer_item.setFixedHeight(3)
 
-        self.center_layout.addSpacing(3)
+        self.center_layout.addWidget(self.progress_spacer_item)
         self.center_layout.addWidget(self.progress_bar)
 
         # Prompt input area setup
@@ -89,14 +97,20 @@ class GenerateTab(QWidget):
         self.prompt_layout.addWidget(self.prompt_text_edit)
         self.prompt_layout.addWidget(self.generate_button)
         self.prompt_widget.setLayout(self.prompt_layout)
+
+        # Edit tools
+        self.edit_tools_widget = EditToolsWidget()
+        self.edit_tools_widget.hide()
         self.prompt_center_layout.addWidget(self.prompt_widget)
+        self.prompt_center_layout.addWidget(self.edit_tools_widget)
 
         self.center_layout.addLayout(self.prompt_center_layout)
         self.layout.addLayout(self.center_layout)
 
         # Configuration bar
-        self.configuration_bar = ConfigurationBar()
+        self.configuration_bar = RightPanel(self.settings)
         self.configuration_bar.model_changed.connect(self.load_pipeline)
+        self.configuration_bar.on_tab_changed.connect(self.on_mode_changed)
         self.layout.addWidget(self.configuration_bar, alignment=Qt.AlignRight)
 
         self.generate_button.clicked.connect(self.generate_image)
@@ -106,6 +120,38 @@ class GenerateTab(QWidget):
         self.setLayout(self.layout)
 
         self.check_for_run()
+
+    def on_mode_changed(self, index):
+        self.image_viewer.set_edit_mode(index == 1)
+
+        if index == 1:
+            self.edit_tools_widget.show()
+            self.prompt_widget_animation = OpacityAnimation(
+                self.prompt_widget, 1, 0, 200
+            )
+            self.edit_tools_animation = OpacityAnimation(
+                self.edit_tools_widget, 0, 1, 200
+            )
+            self.prompt_widget_animation.finished.connect(
+                self.prompt_widget.hide
+            )
+            self.prompt_widget_animation.finished.connect(self.edit_tools_animation.start)
+            self.prompt_widget_animation.start()
+
+        else:
+            self.edit_tools_animation = OpacityAnimation(
+                self.edit_tools_widget, 1, 0, 200
+            )
+            self.prompt_widget.show()
+            self.prompt_widget_animation = OpacityAnimation(
+                self.prompt_widget, 0, 1, 200
+            )
+            self.edit_tools_animation.finished.connect(
+                self.edit_tools_widget.hide
+            )
+            self.prompt_widget_animation.finished.connect(self.edit_tools_animation.start)
+            self.prompt_widget_animation.start()
+
 
     def check_for_run(self):
         if self.prompt_text_edit.text() and self.predictor.is_pipeline_loaded():
@@ -118,10 +164,20 @@ class GenerateTab(QWidget):
         self.display_image(image_path)
         self.configuration_bar.load_settings_from_list(settings)
 
+    def update_device(self, device):
+        self.device = device
+        self.load_pipeline(self.configuration_bar.model_id)
+
     def load_pipeline(self, model_id):
         self.configuration_bar.start_animation()
         self.generate_button.setEnabled(False)
-        self.predictor.load_pipeline(model_id)
+        try:
+            model_path = [
+                model.model_path for model in self.models if model.modelId == model_id
+            ][0]
+        except IndexError:
+            return
+        self.predictor.load_pipeline(model_path, model_id, self.device)
 
     def pipeline_loaded(self):
         self.configuration_bar.stop_animation()
@@ -150,6 +206,12 @@ class GenerateTab(QWidget):
         self.thread_pool.start(task)
 
     def update_models(self, models):
+        models = [
+            model
+            for model in models
+            if model.downloaded and model.model_type == "generate"
+        ]
+        self.models = models
         self.configuration_bar.update_models(models)
 
     def update_progress(self, value: int):
@@ -164,6 +226,7 @@ class GenerateTab(QWidget):
         self.stop_animation()
         self.generate_button.setEnabled(True)
         self.progress_bar.setValue(0)
+        self.generated_image.emit()
 
     def start_animation(self):
         self.generate_button.setText("")

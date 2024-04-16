@@ -3,6 +3,8 @@ from os.path import abspath
 
 from PySide6.QtCore import QSettings, QObject, Signal, QStandardPaths
 
+from utils.functions import get_available_devices
+
 
 class Settings(QObject):
     settings_changed = Signal()
@@ -35,3 +37,26 @@ class Settings(QObject):
         self.set_save_location(
             abspath(os.path.join(documents_path, "aigenlab", "images"))
         )
+
+    def get_device(self):
+        return self.settings.value("device", get_available_devices()[0])
+
+    def set_device(self, device):
+        self.settings.setValue("device", device)
+        self.settings_changed.emit()
+
+    def get_prediction_settings(self):
+        return (
+            self.settings.value("width", 512),
+            self.settings.value("height", 512),
+            self.settings.value("steps", 60),
+            self.settings.value("guidance_scale", 7.5),
+        )
+
+    def set_prediction_settings(self, width, height, steps, guidance_scale):
+        self.settings.setValue("width", width)
+        self.settings.setValue("height", height)
+        self.settings.setValue("steps", steps)
+        self.settings.setValue("guidance_scale", guidance_scale)
+
+        self.settings_changed.emit()

@@ -20,10 +20,15 @@ class HistoryTab(QWidget):
         )
         layout = QVBoxLayout()
         self.history_list = QListWidget()
+        self.history_list.setVerticalScrollMode(QListWidget.ScrollPerPixel)
+        self.history_list.verticalScrollBar().setSingleStep(15)
         layout.addWidget(self.history_list)
         self.setLayout(layout)
 
     def load_history_items(self, directory):
+        self.history_list.clear()
+        history_items = []
+
         for folder_name in os.listdir(directory):
             folder_path = os.path.join(directory, folder_name)
             if os.path.isdir(folder_path):
@@ -44,6 +49,7 @@ class HistoryTab(QWidget):
                     with open(settings_path, "r") as file:
                         settings = json.load(file)
                         prompt = settings.get("prompt", "Unknown prompt")
+                        date = settings.get("date")
                         settings_filtered = [
                             ["Width", settings.get("width")],
                             ["Height", settings.get("height")],
@@ -52,10 +58,15 @@ class HistoryTab(QWidget):
                             ["Style", settings.get("style")],
                         ]
                         history_item_widget = HistoryItem(
-                            prompt, settings_filtered, image_path
+                            prompt, settings_filtered, image_path, date
                         )
-                        history_item_widget.clicked.connect(self.item_clicked.emit)
-                        list_item = QListWidgetItem(self.history_list)
-                        list_item.setSizeHint(history_item_widget.sizeHint())
-                        self.history_list.addItem(list_item)
-                        self.history_list.setItemWidget(list_item, history_item_widget)
+                        history_item_widget.clicked.connect(self.item_clicked)
+                        history_items.append(history_item_widget)
+
+        history_items.sort(key=lambda x: x.date, reverse=True)
+
+        for history_item_widget in history_items:
+            list_item = QListWidgetItem(self.history_list)
+            list_item.setSizeHint(history_item_widget.sizeHint())
+            self.history_list.addItem(list_item)
+            self.history_list.setItemWidget(list_item, history_item_widget)

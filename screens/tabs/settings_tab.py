@@ -1,66 +1,76 @@
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
-    QLabel,
-    QPushButton,
-    QLineEdit,
-    QFileDialog,
-    QHBoxLayout,
 )
 
 from constants import SETTINGS_STYLES
+from utils.functions import get_available_devices
+from widgets.option_selector import OptionSelector
+from widgets.path_picker import PathPicker
+from widgets.title_label import TitleLabel
 
 
 class SettingsTab(QWidget):
+    device_changed = Signal(str)
+
     def __init__(self, settings, parent=None):
         super().__init__(parent)
+        self.setAttribute(Qt.WA_StyledBackground, True)
+
         self.setStyleSheet(SETTINGS_STYLES)
         self.settings = settings
+        self.devices = get_available_devices()
 
         self.layout = QVBoxLayout(self)
 
-        self.download_location_label = QLabel("Download Location for Models:")
-        self.layout.addWidget(self.download_location_label)
-
-        self.download_location_layout = QHBoxLayout()
-        self.download_location_edit = QLineEdit()
+        self.download_location_label = TitleLabel("Download Location for Models:")
+        self.download_location_edit = PathPicker()
         self.download_location_edit.setText(self.settings.get_download_location())
-        self.download_location_edit.setReadOnly(True)
-        self.browse_button = QPushButton("Browse...")
-        self.download_location_layout.addWidget(self.download_location_edit)
-        self.download_location_layout.addWidget(self.browse_button)
-        self.layout.addLayout(self.download_location_layout)
+        self.layout.addWidget(self.download_location_label)
+        self.layout.addWidget(self.download_location_edit)
+        self.layout.addSpacing(10)
 
-        self.save_location_label = QLabel("Save Location for Photos:")
-        self.layout.addWidget(self.save_location_label)
-
-        self.save_location_layout = QHBoxLayout()
-        self.save_location_edit = QLineEdit()
+        self.save_location_label = TitleLabel("Save Location for Photos:")
+        self.save_location_edit = PathPicker()
         self.save_location_edit.setText(self.settings.get_save_location())
-        self.save_location_edit.setReadOnly(True)
-        self.save_browse_button = QPushButton("Browse...")
-        self.save_location_layout.addWidget(self.save_location_edit)
-        self.save_location_layout.addWidget(self.save_browse_button)
-        self.layout.addLayout(self.save_location_layout)
+        self.layout.addWidget(self.save_location_label)
+        self.layout.addWidget(self.save_location_edit)
+        self.layout.addSpacing(10)
 
+        self.device_label = TitleLabel("Device:")
+        self.device_select = OptionSelector("Select Device")
+        self.device_select.option_changed.connect(self.on_device_changed)
+        self.device_select.set_options([device[0] for device in self.devices])
+        self.device_select.select_option(self.get_current_device()[0])
+
+        self.layout.addWidget(self.device_label)
+        self.layout.addWidget(self.device_select)
+        self.layout.addSpacing(10)
         self.layout.addStretch()
 
-        self.browse_button.clicked.connect(self.open_folder_dialog)
-        self.save_browse_button.clicked.connect(self.open_save_folder_dialog)
         self.setLayout(self.layout)
 
-    def open_folder_dialog(self):
-        folder_path = QFileDialog.getExistingDirectory(
-            self, "Select Download Folder for Models"
-        )
-        if folder_path:
-            self.download_location_edit.setText(folder_path)
-            self.settings.set_download_location(folder_path)
+    def get_device_ref(self, name):
+        for device in self.devices:
+            if device[0] == name:
+                return device[1]
 
-    def open_save_folder_dialog(self):
-        folder_path = QFileDialog.getExistingDirectory(
-            self, "Select Save Folder for Photos"
-        )
-        if folder_path:
-            self.save_location_edit.setText(folder_path)
-            self.settings.set_save_location(folder_path)
+    def get_device_name(self, ref):
+        for device in self.devices:
+            if device[1] == ref:
+                return device[0]
+
+    def get_current_device(self):
+        device_ref = self.settings.get_device()
+        device_name = self.get_device_name(device_ref)
+
+        if device_name is not None:
+            return [device_name, device_ref]
+        else:
+            return self.devices[0]
+
+    def on_device_changed(self, device):
+        device_ref = self.get_device_ref(device)
+        self.settings.set_device(device_ref)
+        self.device_changed.emit(device_ref)

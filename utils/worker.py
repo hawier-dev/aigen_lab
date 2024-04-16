@@ -1,6 +1,10 @@
 import torch
 from PySide6.QtCore import QRunnable, QObject, Signal, Slot, QThread
-from diffusers import StableDiffusionPipeline
+from diffusers import (
+    StableDiffusionPipeline,
+    DiffusionPipeline,
+    AutoPipelineForText2Image,
+)
 
 
 class WorkerSignals(QObject):
@@ -58,15 +62,30 @@ class ImageGenerationTask(QRunnable):
 class PipelineLoaderThread(QThread):
     finished = Signal(object)
 
-    def __init__(self, model_path, torch_dtype=torch.float16, device="cuda"):
+    def __init__(self, model_path, model_id, device):
         super().__init__()
         self.model_path = model_path
-        self.torch_dtype = torch_dtype
+        self.model_id = model_id
+        self.torch_dtype = self.get_torch_dtype(device)
         self.device = device
 
+    def get_torch_dtype(self, device):
+        if device == "cpu":
+            return torch.float32
+        else:
+            if torch.cuda.is_bf16_supported():
+                return torch.bfloat16
+            else:
+                return torch.float16
+
     def run(self):
-        pipe = StableDiffusionPipeline.from_pretrained(
+        pipe = self.load_pipeline()
+        self.finished.emit(pipe)
+
+    def load_pipeline(self):
+        pipe = AutoPipelineForText2Image.from_pretrained(
             self.model_path,
             torch_dtype=self.torch_dtype,
         ).to(self.device)
-        self.finished.emit(pipe)
+
+        return pipe

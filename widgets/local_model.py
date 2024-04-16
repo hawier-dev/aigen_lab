@@ -1,7 +1,7 @@
 import json
 import os
+import shutil
 import webbrowser
-from shutil import rmtree
 
 from PySide6.QtCore import Qt, QSize, QPoint
 from PySide6.QtGui import QPixmap, QAction, QIcon
@@ -18,9 +18,6 @@ from PySide6.QtWidgets import (
 from constants import (
     LOCAL_MODEL_STYLES,
     primary_color,
-    surface_color,
-    surface2_color,
-    surface3_color,
 )
 from utils.file_downloader import FileDownloader
 
@@ -31,6 +28,7 @@ class LocalModel(QWidget):
         model_id,
         model_path,
         branch,
+        model_type,
         total_size=None,
         library=None,
         downloaded=False,
@@ -43,6 +41,7 @@ class LocalModel(QWidget):
         self.model_path = model_path
         self.branch = branch
         self.downloaded = downloaded
+        self.model_type = model_type
         self.downloading = False
         self.setFixedHeight(80)
         self.setAttribute(Qt.WA_StyledBackground, True)
@@ -54,19 +53,16 @@ class LocalModel(QWidget):
 
         self.user_logo_label = QLabel()
         self.user_logo_label.setFixedSize(18, 18)
-        self.user_logo_label.setPixmap(QPixmap("assets/model.png").scaled(18, 18))
+        self.user_logo_label.setPixmap(QPixmap("assets/model.png"))
 
+        model_label_layout = QVBoxLayout()
+        model_label_layout.setSpacing(1)
         self.model_label = QLabel(self.modelId)
         self.model_label.setStyleSheet("font-size: 14px; font-weight: bold;")
-        self.model_status = QLabel(self.branch)
-        self.model_status.setStyleSheet(
-            f"font-size: 11px; "
-            f"font-weight: bold; "
-            f"color: #fff; "
-            f"background-color: {primary_color};"
-            "border-radius: 5px; "
-            "padding: 2px;"
-        )
+        self.model_type_label = QLabel(self.model_type)
+        self.model_type_label.setStyleSheet("font-size: 12px; color: #ccc;")
+        model_label_layout.addWidget(self.model_label)
+        model_label_layout.addWidget(self.model_type_label)
         self.model_size_label = QLabel("")
         if total_size is not None:
             self.model_size_label.setText(self.total_size)
@@ -84,34 +80,26 @@ class LocalModel(QWidget):
         self.manage_button.clicked.connect(self.show_manage_menu)
 
         self.download_button = QPushButton("   Download")
-        self.download_button.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: {surface_color};
-                color: #fff;
-                font-size: 12px;
-                font-weight: bold;
-                border: 1px solid {surface2_color};
-                padding: 5px 10px;
-            }}
-            QPushButton:hover {{
-                background-color: {surface2_color};
-            }}
-            QPushButton:pressed {{
-                background-color: {surface3_color};
-            }}
-        """
-        )
         self.download_button.setFixedSize(120, 36)
+        self.download_button.setCursor(Qt.PointingHandCursor)
         self.download_button.setIcon(QIcon(QPixmap("assets/download_icon.png")))
         self.download_button.setIconSize(QSize(14, 14))
         self.download_button.pressed.connect(self.start_download)
 
+        self.cancel_button = QPushButton("")
+        self.cancel_button.setFixedSize(36, 36)
+        self.cancel_button.setCursor(Qt.PointingHandCursor)
+        self.cancel_button.setIcon(QIcon(QPixmap("assets/cancel.png")))
+        self.cancel_button.setIconSize(QSize(14, 14))
+        self.cancel_button.pressed.connect(self.cancel_download)
+        self.cancel_button.hide()
+
         self.top_layout.addWidget(self.user_logo_label)
-        self.top_layout.addWidget(self.model_label)
+        self.top_layout.addLayout(model_label_layout)
         # self.top_layout.addWidget(self.model_status)
         self.top_layout.addStretch()
         self.top_layout.addWidget(self.model_size_label)
+        self.top_layout.addWidget(self.cancel_button)
         if self.downloaded:
             self.top_layout.addWidget(self.manage_button)
         else:
@@ -159,17 +147,31 @@ class LocalModel(QWidget):
         self.library.remove_model(self)
 
     def cancel_download(self):
-        pass
+        self.downloader.cancel_download()
+
+    def download_cancelled(self):
+        self.model_size_label.setText("Cleaning up...")
+        try:
+            shutil.rmtree(self.model_path)
+        except Exception as e:
+            print(f"Error cleaning up model: {e}")
+        self.set_downloading(False)
 
     def set_downloading(self, downloading):
         self.downloading = downloading
         if self.downloading:
             self.progress_bar.show()
+            self.cancel_button.show()
+            self.download_button.hide()
             self.model_size_label.setText("Waiting...")
         else:
             self.progress_bar.hide()
+            self.cancel_button.hide()
             if self.downloaded:
                 self.model_size_label.setText(self.total_size)
+            else:
+                self.download_button.show()
+                self.model_size_label.setText("")
 
     def update_progress(self, model_id, value_str, maximum_str, value):
         self.model_size_label.setText(f"{value_str} / {maximum_str}")
@@ -185,17 +187,19 @@ class LocalModel(QWidget):
         )
         self.downloader.download_complete.connect(self.download_finished)
         self.downloader.progress_updated.connect(self.update_progress)
+        self.downloader.download_cancelled.connect(self.download_cancelled)
         self.downloader.start()
 
     def download_finished(self, model_id):
+        self.downloaded = True
         self.set_downloading(False)
-        self.set_downloaded(True)
         model_info_path = os.path.join(self.model_path, "info.json")
         model_info_data = {
             "downloaded": True,
             "size": self.total_size,
             "name": self.modelId,
             "branch": self.branch,
+            "model_type": self.model_type,
         }
         with open(model_info_path, "w") as json_file:
             json.dump(model_info_data, json_file, indent=4)

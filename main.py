@@ -1,8 +1,8 @@
-import os
 import sys
+import locale
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFontDatabase, QPalette, QColor
+from PySide6.QtGui import QFontDatabase, QPalette, QColor, QIcon
 from PySide6.QtWidgets import QApplication, QMainWindow
 
 from constants import *
@@ -12,7 +12,9 @@ from screens.main_screen import MainScreen
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Test")
+        locale.setlocale(locale.LC_ALL, "")
+
+        self.setWindowTitle("AIGen Lab")
         self.setGeometry(100, 100, 800, 600)
 
         self.tabs = MainScreen()
@@ -53,6 +55,7 @@ def setup_palette():
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    app.setWindowIcon(QIcon("assets/logo.png"))
     app.setPalette(setup_palette())
     load_custom_fonts()
     app.setStyleSheet(STYLESHEETS)

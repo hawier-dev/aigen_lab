@@ -13,7 +13,7 @@ class Snackbar(QWidget):
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.text = QLabel(message, self)
-        self.text.setFont(QFont('Inter', 10))
+        self.text.setFont(QFont("Inter", 10))
         self.text.setOpenExternalLinks(False)
         self.text.linkActivated.connect(self.on_link_clicked)
         self.text.setStyleSheet(
@@ -49,8 +49,12 @@ class Snackbar(QWidget):
 
         self.setGeometry(x_position, -widget_height, widget_width, widget_height)
         self.animation.setDuration(500)
-        self.animation.setStartValue(QRect(x_position, y_position_start, widget_width, widget_height))
-        self.animation.setEndValue(QRect(x_position, y_position_end, widget_width, widget_height))
+        self.animation.setStartValue(
+            QRect(x_position, y_position_start, widget_width, widget_height)
+        )
+        self.animation.setEndValue(
+            QRect(x_position, y_position_end, widget_width, widget_height)
+        )
         self.animation.start()
 
     def hideAnimation(self):
@@ -59,12 +63,14 @@ class Snackbar(QWidget):
         y_position_end = screen_height - widget_height - 20
 
         self.animation.setDuration(500)
-        self.animation.setStartValue(QRect(self.x(), y_position_end, self.width(), widget_height))
-        self.animation.setEndValue(QRect(self.x(), screen_height, self.width(), widget_height))
+        self.animation.setStartValue(
+            QRect(self.x(), y_position_end, self.width(), widget_height)
+        )
+        self.animation.setEndValue(
+            QRect(self.x(), screen_height, self.width(), widget_height)
+        )
         self.animation.finished.connect(self.hide)
         self.animation.start()
 
     def on_link_clicked(self):
         self.link_clicked.emit()
-
-

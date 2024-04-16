@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
 )
 from utils.file_downloader import FileDownloader
+from utils.functions import get_supported_format
 from widgets.local_model import LocalModel
 from constants import AVAIABLE_MODELS, surface_color
 
@@ -59,6 +60,7 @@ class ModelsTab(QWidget):
                             branch=model_info_data.get("branch", "main"),
                             total_size=model_info_data.get("size", "0B"),
                             downloaded=model_info_data.get("downloaded", False),
+                            model_type=model_info_data.get("model_type", ""),
                             library=self,
                         )
                         self.add_model(model_info, downloading=False)
@@ -80,10 +82,13 @@ class ModelsTab(QWidget):
                 ),
                 branch=model.get("branch", "main"),
                 total_size=model.get("size", "0B"),
+                model_type=model.get("model_type", ""),
                 downloaded=False,
                 library=self,
             )
             self.add_model(model_info, downloading=False)
+
+        self.models_changed.emit(self.models)
 
     def add_model(self, local_model, downloading=False, branch="main"):
         local_model.set_downloading(downloading)

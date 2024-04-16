@@ -1,6 +1,7 @@
 import requests
 from PySide6.QtGui import QImage, QPixmap
 from huggingface_hub import HfApi
+import torch
 
 
 def convert_to_k_m(number):
@@ -26,3 +27,32 @@ def convert_size(size_bytes):
         return f"{size_bytes / mb:.2f} MB"
     else:
         return f"{size_bytes / gb:.2f} GB"
+
+
+def get_supported_format(branches):
+    if torch.cuda.is_available():
+        if torch.cuda.is_bf16_supported() and "bf16" in branches:
+            return "bf16"
+        elif "fp16" in branches:
+            return "fp16"
+        else:
+            return "main"
+
+    else:
+        return "main"
+
+
+def truncate_model_id(model_id):
+    model_id = model_id.split("/")[1]
+    return model_id
+
+
+def get_available_devices():
+    devices = []
+    if torch.cuda.is_available():
+        for i in range(torch.cuda.device_count()):
+            device_name = torch.cuda.get_device_name(i)
+            device_ref = f"cuda:{i}"
+            devices.append((device_name, device_ref))
+    devices.append(("CPU", "cpu"))
+    return devices
