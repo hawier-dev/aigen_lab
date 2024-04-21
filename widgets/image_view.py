@@ -174,7 +174,6 @@ class ImageView(QGraphicsView):
                 self.drawing_layer.fill(Qt.transparent)
                 self.drawing_pixmap_item.setPixmap(self.drawing_layer)
 
-
     def wheelEvent(self, event):
         if self.image_created:
             factor = 1.1

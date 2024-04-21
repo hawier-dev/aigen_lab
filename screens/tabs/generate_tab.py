@@ -101,6 +101,7 @@ class GenerateTab(QWidget):
         # Edit tools
         self.edit_tools_widget = EditToolsWidget()
         self.edit_tools_widget.hide()
+        self.edit_tools_widget.setFixedHeight(52)
         self.prompt_center_layout.addWidget(self.prompt_widget)
         self.prompt_center_layout.addWidget(self.edit_tools_widget)
 
